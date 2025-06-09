@@ -1,64 +1,76 @@
 import {TronWeb} from 'tronweb';
 import 'dotenv/config';
-import routerArtifact from './SunSwapV2Router02.json' assert { type: 'json' };
-const routerAbi = routerArtifact.abi;
+
+const v3RouterAbi = [{
+  name: 'exactInput',
+  type: 'function',
+  stateMutability: 'payable',
+  inputs: [
+    {
+      components: [
+        { internalType: 'bytes',    name: 'path',         type: 'bytes'    },
+        { internalType: 'address',  name: 'recipient',    type: 'address'  },
+        { internalType: 'uint256',  name: 'deadline',     type: 'uint256'  }
+      ],
+      internalType: 'struct ExactInputParams',
+      name: 'params',
+      type: 'tuple'
+    }
+  ],
+  outputs: [
+    { internalType: 'uint256[]', name: 'amountsOut', type: 'uint256[]' }
+  ]
+}];
 
 async function main() {
   const tronWeb = new TronWeb({
-    fullNode:     'https://api.nileex.io',     
-    solidityNode: 'https://api.nileex.io',     
-    eventServer:  'https://event.nileex.io',   
+    fullNode:     'https://nile.trongrid.io',
+    solidityNode: 'https://nile.trongrid.io', 
+    eventServer:  'https://nile.trongrid.io',
     privateKey:   process.env.PRIVATE_KEY_NILE
   });
 
-  const routerAddr = 'TB6xBCixqRPUSKiXb45ky1GhChFJ7qrfFj';
+  const routerAddr = 'TFkswj6rUfK3cQtFGzungCkNXxD2UCpEVD';
   const usdtAddr   = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
   const jstAddr    = 'TF17BgPaZYbz8oxbjhriubPDsA7ArKoLX3';
   const me         = tronWeb.defaultAddress.base58;
 
-  const amountIn = (100 * 10 ** 6).toString(); 
+  const amountIn     = (100 * 10**6).toString();
+  const amountOutMin = '1';
+  const deadline     = Math.floor(Date.now() / 1000) + 300;
 
   console.log('Approving router to spend USDT…');
-  const usdtContract = await tronWeb.contract().at(usdtAddr);
-  await usdtContract.approve(routerAddr, amountIn).send({
+  const usdt = await tronWeb.contract().at(usdtAddr);
+  await usdt.approve(routerAddr, amountIn).send({
     feeLimit:          1e8,
     callValue:         0,
     shouldPollResponse: true
   });
-  console.log(' Approval confirmed.');
+  console.log('✅ Approval confirmed.');
 
-  console.log('Instantiating router…');
-  const router = await tronWeb.contract(routerAbi, routerAddr);
-   if (typeof router.swapExactTokensForTokens !== 'function') {
-     console.error('Available router methods:', Object.keys(router));
-     throw new Error('swapExactTokensForTokens() not found');
-   }
+  const feeHex       = '0001f4';
+  const tokenInHex   = tronWeb.address.toHex(usdtAddr).slice(2);
+  const tokenOutHex  = tronWeb.address.toHex(jstAddr).slice(2);
+  const pathBytes    = '0x' + tokenInHex + feeHex + tokenOutHex;
 
-  console.log('Swapping 100 USDT for JST…');
-  const deadline = Math.floor(Date.now() / 1000) + 300; 
-  await router.swapExactTokensForTokens(
-    usdtAddr,
-    amountIn,
-    '1',                  
-    [usdtAddr, jstAddr],  
-    me,                   
-    deadline
-  ).send({
-    feeLimit:          1e8,
-    callValue:         0,
+  const router = await tronWeb.contract(v3RouterAbi, routerAddr);
+
+  console.log('Swapping 100 USDT for JST via exactInput…');
+  const params = [ pathBytes, me, deadline ];
+  const result = await router.exactInput(params).send({
+    feeLimit:          15000000000,
+    callValue:         5000000,
     shouldPollResponse: true
   });
-  console.log(' Swap transaction confirmed.');
+  console.log('✅ Swap complete, amountsOut (base units):', result);
 
-  console.log('Fetching your JST balance…');
-  const jstContract = await tronWeb.contract().at(jstAddr);
-  const balanceSun  = await jstContract.balanceOf(me).call();
-  const decimals    = await jstContract.decimals().call();
-  const balance     = Number(balanceSun) / 10 ** Number(decimals);
-  console.log(` You now have ${balance} JST`);
+  const jst = await tronWeb.contract().at(jstAddr);
+  const balSun = await jst.balanceOf(me).call();
+  const decs   = await jst.decimals().call();
+  console.log(`🎉 You now have ${Number(balSun) / 10**Number(decs)} JST`);
 }
 
 main().catch(err => {
-  console.error(' Error during swap:', err);
+  console.error('❌ Swap failed:', err);
   process.exit(1);
 });
