@@ -35,7 +35,7 @@ async function main() {
     privateKey:   process.env.PRIVATE_KEY_NILE
   });
 
-  const routerAddr = 'TFkswj6rUfK3cQtFGzungCkNXxD2UCpEVD';  
+  const routerAddr = 'TDAQGC5Ekd683GjekSaLzCaeg7jGsGSmbh';  
   const usdtAddr   = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';  
   const usdjAddr   = 'TLBaRhANQoJFTqre9Nf1mjuwNWjCJeYqUL';  
   const me         = tronWeb.defaultAddress.base58;       
@@ -53,9 +53,9 @@ async function main() {
   const router = await tronWeb.contract(v3RouterAbi, routerAddr);
 
   const path        = [usdtAddr, usdjAddr];
-  const poolVersion = ['usdj2pooltusdusdt'];
+  const poolVersion = ['v2'];
   const versionLen  = [2];
-  const fees        = [0];   
+  const fees        = [0,0];   
 
   const data = [ amountIn, amountOutMin, me, deadline ];
 
