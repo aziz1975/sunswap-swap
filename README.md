@@ -89,6 +89,7 @@ Fetching USDJ balance…
 
 ## Useful Resources
 
-* [SunSwap Documentation](https://sunswap.com/)
+* [SunSwap Documentation (smart-router)](https://docs.sun.io/developers/swap/smart-router/contract)
+* [SunSwap Documentation (exchange-functions)](https://docs.sun.io/developers/swap/smart-router/exchange-functions#complete-code)
 * [TronWeb Documentation](https://developers.tron.network/docs/tronweb-intro)
 * [TRON Nile Testnet Explorer](https://nile.tronscan.org)
