@@ -25,7 +25,8 @@ SUNSWAP-SWAP/
 
 ## Installation
 
-1. Clone the repository:
+1. Clone the repository: \
+https://github.com/aziz1975/sunswap-swap.git
 
 ```bash
 git clone <repository-url>
